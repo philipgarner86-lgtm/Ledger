@@ -181,7 +181,7 @@ function aggregate(accts,dc,fx) {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let data = load() || {
-  owners:[{id:'me',name:'My Accounts',emoji:'👤',displayCurrency:'EUR'}],
+  owners:[{id:'me',name:'My Accounts',displayCurrency:'EUR'}],
   accounts:{me:[]},
   fx:DEFAULT_FX
 };
@@ -206,7 +206,7 @@ function persist(d){data=d;save(data);render();}
 function doAddOwner(){
   const name=(document.getElementById('f-name')||{}).value||'';
   if(!name.trim()) return;
-  const o={id:uid(),name:name.trim(),emoji:form.emoji||'🧒',displayCurrency:form.displayCurrency||'EUR'};
+  const o={id:uid(),name:name.trim(),displayCurrency:form.displayCurrency||'EUR'};
   const next={...data,owners:[...data.owners,o],accounts:{...data.accounts,[o.id]:[]}};
   ownerIdx=next.owners.length-1; screen='dashboard'; form={};
   persist(next);
@@ -215,7 +215,8 @@ function doAddAccount(){
   const name=(document.getElementById('f-name')||{}).value||'';
   if(!name.trim()) return;
   const a={id:uid(),name:name.trim(),type:form.type||ALL_TYPES[0],currency:form.currency||'EUR',contributions:[],valuations:[],createdAt:todayStr()};
-  setAccts([...accts(),a]); screen='dashboard'; form={};
+  screen='dashboard'; form={};
+  setAccts([...accts(),a]);
 }
 function doAddContribution(){
   const date=(document.getElementById('s-date')||{}).value||'';
@@ -223,8 +224,8 @@ function doAddContribution(){
   const note=(document.getElementById('s-note')||{}).value||'';
   if(!amount||!date) return;
   const entry={id:uid(),date,amount,note};
-  setAccts(accts().map(a=>a.id!==activeAcctId?a:{...a,contributions:[...a.contributions,entry].sort((x,y)=>x.date.localeCompare(y.date))}));
   sheet=null; form={};
+  setAccts(accts().map(a=>a.id!==activeAcctId?a:{...a,contributions:[...a.contributions,entry].sort((x,y)=>x.date.localeCompare(y.date))}));
 }
 function doAddValuation(){
   const date=(document.getElementById('s-date')||{}).value||'';
@@ -232,8 +233,8 @@ function doAddValuation(){
   const note=(document.getElementById('s-note')||{}).value||'';
   if(!value||!date) return;
   const entry={id:uid(),date,value,note};
-  setAccts(accts().map(a=>a.id!==activeAcctId?a:{...a,valuations:[...a.valuations.filter(v=>v.date!==date),entry].sort((x,y)=>x.date.localeCompare(y.date))}));
   sheet=null; form={};
+  setAccts(accts().map(a=>a.id!==activeAcctId?a:{...a,valuations:[...a.valuations.filter(v=>v.date!==date),entry].sort((x,y)=>x.date.localeCompare(y.date))}));
 }
 function doDeleteItem(type,id){
   setAccts(accts().map(a=>a.id!==activeAcctId?a:{
@@ -296,8 +297,7 @@ function render(){
         <p class="form-hint">Add a child or partner whose investments you manage.</p>
         <label class="field-label">Name</label>
         <input class="field-input" id="f-name" placeholder="e.g. Emma" value="${esc(form.name||'')}">
-        <label class="field-label">Emoji (optional)</label>
-        <input class="field-input" id="f-emoji" placeholder="🧒" value="${esc(form.emoji||'')}">
+
         <label class="field-label">Display Currency</label>
         <div class="cur-row">
           ${CURRENCIES.map(c=>`<button class="cur-btn${(form.displayCurrency||'EUR')===c.code?' active':''}" data-action="set-owner-cur" data-val="${c.code}">${c.sym} ${c.code}</button>`).join('')}
@@ -363,7 +363,7 @@ function render(){
 
     const sheetHtml=sheet==='contribution'?`
       <div class="sheet-overlay" data-action="close-sheet">
-        <div class="sheet">
+        <div class="sheet" data-action="noop">
           <div class="sheet-handle"></div>
           <div class="sheet-title">Log Contribution</div>
           <label class="field-label">Date</label>
@@ -378,7 +378,7 @@ function render(){
       </div>`:
     sheet==='valuation'?`
       <div class="sheet-overlay" data-action="close-sheet">
-        <div class="sheet">
+        <div class="sheet" data-action="noop">
           <div class="sheet-handle"></div>
           <div class="sheet-title">Record Valuation</div>
           <label class="field-label">Date</label>
@@ -393,7 +393,7 @@ function render(){
       </div>`:
     sheet==='del-acct'?`
       <div class="sheet-overlay" data-action="close-sheet">
-        <div class="sheet">
+        <div class="sheet" data-action="noop">
           <div class="sheet-handle"></div>
           <div class="sheet-title">Delete Account?</div>
           <p class="del-warn">Permanently deletes <strong>${esc(acct.name)}</strong> and all its history.</p>
@@ -441,12 +441,6 @@ function render(){
     [...(acct.contributions||[])].forEach(c=>bindSwipe('c',c.id));
     [...(acct.valuations||[])].forEach(v=>bindSwipe('v',v.id));
 
-    // Stop sheet overlay closing when tapping inside sheet
-    const so=app.querySelector('.sheet-overlay');
-    if(so){
-      const sh=app.querySelector('.sheet');
-      if(sh) sh.addEventListener('click',e=>e.stopPropagation());
-    }
     return;
   }
 
@@ -503,7 +497,7 @@ function render(){
     </div>
     <div class="scroll-area">
       <div class="owner-scroll">
-        ${data.owners.map((ow,i)=>`<button class="owner-chip${i===ownerIdx?' active':''}" data-action="switch-owner" data-idx="${i}"><span>${ow.emoji}</span> ${esc(ow.name)}</button>`).join('')}
+        ${data.owners.map((ow,i)=>`<button class="owner-chip${i===ownerIdx?' active':''}" data-action="switch-owner" data-idx="${i}">${esc(ow.name)}</button>`).join('')}
         <button class="owner-chip-add" data-action="goto-new-owner">+ Add</button>
       </div>
       ${as.length>0?`
@@ -558,10 +552,12 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 document.getElementById('app').addEventListener('click',function(e){
   const btn=e.target.closest('[data-action]');
   if(!btn) return;
+  e.stopPropagation();
   const action=btn.dataset.action;
   const val=btn.dataset.val||'';
 
   switch(action){
+    case 'noop': break;
     case 'back': screen='dashboard'; form={}; render(); break;
     case 'close-sheet': sheet=null; form={}; render(); break;
 
@@ -584,18 +580,20 @@ document.getElementById('app').addEventListener('click',function(e){
       form.emoji=(document.getElementById('f-emoji')||{}).value||'';
       doAddOwner(); break;
 
-    // New account
+    // New account — currency/type/group buttons update in-place, no re-render, so no duplicate account
     case 'set-acct-cur':
-      form.name=(document.getElementById('f-name')||{}).value||form.name||'';
-      form.currency=val; render(); break;
+      form.currency=val;
+      document.querySelectorAll('.cur-btn').forEach(b=>b.classList.toggle('active',b.dataset.val===val));
+      break;
     case 'set-group':
-      form.name=(document.getElementById('f-name')||{}).value||form.name||'';
-      form.currency=form.currency||'EUR';
-      typeGroup=val; form.type=ACCT_TYPES[val][0]; render(); break;
+      typeGroup=val; form.type=ACCT_TYPES[val][0];
+      document.querySelectorAll('.group-tab').forEach(b=>b.classList.toggle('active',b.dataset.val===val));
+      document.querySelector('.type-list').innerHTML=ACCT_TYPES[val].map(t=>'<button class="type-item'+(form.type===t?' active':'')+'" data-action="set-type" data-val="'+t+'"><span>'+t+'</span>'+(form.type===t?'<span class="type-check">✓</span>':'')+'</button>').join('');
+      break;
     case 'set-type':
-      form.name=(document.getElementById('f-name')||{}).value||form.name||'';
-      form.currency=form.currency||'EUR';
-      form.type=val; render(); break;
+      form.type=val;
+      document.querySelectorAll('.type-item').forEach(b=>{ const a=b.dataset.val===val; b.classList.toggle('active',a); b.innerHTML='<span>'+b.dataset.val+'</span>'+(a?'<span class="type-check">✓</span>':''); });
+      break;
     case 'add-account':
       form.name=(document.getElementById('f-name')||{}).value||'';
       doAddAccount(); break;
