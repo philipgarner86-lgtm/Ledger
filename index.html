@@ -9,598 +9,607 @@
 <title>Ledger</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: #f5f4f0; font-family: 'DM Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-  button { font-family: 'DM Sans', sans-serif; cursor: pointer; }
-  input, select { font-family: 'DM Sans', sans-serif; }
-  #app { max-width: 430px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
-
-  .shell { max-width: 430px; margin: 0 auto; min-height: 100vh; background: #f5f4f0; display: flex; flex-direction: column; position: relative; }
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: env(safe-area-inset-top, 44px) 16px 12px; background: #fff; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
-  .topbar-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: #111827; text-align: center; flex: 1; }
-  .topbar-side { width: 64px; display: flex; }
-  .topbar-side.right { justify-content: flex-end; }
-  .topbar-btn { background: none; border: none; color: #3b6cf8; font-size: 16px; font-weight: 500; padding: 4px 0; }
-  .topbar-btn.danger { color: #e05c3a; }
-
-  .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 40px; }
-
-  .owner-scroll { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  .owner-scroll::-webkit-scrollbar { display: none; }
-  .owner-chip { display: flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 20px; padding: 7px 14px; white-space: nowrap; flex-shrink: 0; font-size: 14px; font-weight: 500; color: #111827; }
-  .owner-chip.active { background: #111827; border-color: #111827; color: #fff; }
-  .owner-chip-add { display: flex; align-items: center; background: none; border: 1.5px dashed #d1d5db; border-radius: 20px; padding: 7px 14px; color: #6b7280; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
-
-  .banner { margin: 0 16px 12px; background: #111827; border-radius: 16px; padding: 14px 16px; }
-  .banner-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .banner-cur-row { display: flex; gap: 6px; }
-  .banner-cur-btn { background: none; border: 1px solid #374151; color: #6b7280; border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; }
-  .banner-cur-btn.active { background: #374151; border-color: #374151; color: #f9fafb; }
-  .fx-btn { background: none; border: 1px solid #374151; color: #9ca3af; border-radius: 8px; padding: 5px 10px; font-size: 11px; }
-  .banner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 0; }
-  .banner-stat-label { color: #6b7280; font-size: 11px; margin-bottom: 2px; }
-  .banner-stat-value { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: #f9fafb; }
-  .banner-stat-value.pos { color: #4ade80; }
-  .banner-stat-value.neg { color: #f87171; }
-  .banner-fx-note { margin-top: 12px; font-size: 10px; color: #4b5563; border-top: 1px solid #1f2937; padding-top: 8px; }
-  .empty-banner { margin: 0 16px 12px; background: #f3f4f6; border-radius: 16px; padding: 20px; color: #9ca3af; text-align: center; font-size: 14px; }
-
-  .section-label { padding: 16px 16px 6px; font-size: 11px; color: #9ca3af; letter-spacing: 1px; font-weight: 600; text-transform: uppercase; }
-
-  .acct-row { display: flex; align-items: center; background: #fff; margin: 0 16px 8px; border-radius: 12px; padding: 14px 12px; border: none; width: calc(100% - 32px); text-align: left; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  .acct-row-left { flex: 1; }
-  .acct-row-name { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 2px; }
-  .acct-row-type { font-size: 12px; color: #9ca3af; }
-  .acct-row-right { text-align: right; margin-right: 6px; }
-  .acct-row-value { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: #111827; }
-  .acct-row-converted { font-size: 11px; color: #9ca3af; margin-top: 1px; }
-  .acct-row-roi { font-size: 12px; font-weight: 600; margin-top: 2px; }
-  .chevron { color: #d1d5db; font-size: 22px; line-height: 1; }
-  .new-acct-btn { display: block; margin: 8px 16px 0; width: calc(100% - 32px); background: none; border: 1.5px dashed #d1d5db; border-radius: 12px; padding: 14px; color: #6b7280; font-size: 15px; }
-
-  .acct-meta { display: flex; gap: 8px; padding: 12px 16px 0; flex-wrap: wrap; }
-  .badge { display: inline-block; font-size: 12px; background: #fef3c7; color: #92400e; border-radius: 20px; padding: 4px 10px; }
-  .badge.blue { background: #eef2ff; color: #4f46e5; }
-
-  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px; }
-  .met-card { background: #fff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  .met-card.wide { grid-column: 1 / -1; }
-  .met-label { font-size: 10px; color: #9ca3af; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
-  .met-value { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; color: #111827; }
-  .met-value.muted { color: #9ca3af; }
-  .met-value.pos { color: #16a34a; }
-  .met-value.neg { color: #dc2626; }
-  .met-sub { font-size: 10px; color: #9ca3af; margin-top: 3px; }
-
-  .section-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 8px; }
-  .section-head-title { font-size: 13px; font-weight: 600; color: #6b7280; letter-spacing: 0.5px; text-transform: uppercase; }
-  .section-add-btn { background: #eff6ff; border: none; color: #3b6cf8; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
-
-  .log-row-wrap { position: relative; overflow: hidden; margin: 0 16px 1px; }
-  .log-row { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 13px 14px; border-radius: 10px; transition: transform 0.2s; will-change: transform; }
-  .log-left { flex: 1; }
-  .log-date { font-size: 14px; color: #374151; font-weight: 500; }
-  .log-note { font-size: 12px; color: #9ca3af; margin-top: 2px; }
-  .log-main { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 700; color: #111827; }
-  .delete-slide { position: absolute; right: 0; top: 0; bottom: 0; width: 72px; background: #dc2626; color: white; border: none; font-size: 13px; font-weight: 600; border-radius: 0 10px 10px 0; display: none; }
-
-  .empty-row { margin: 0 16px 8px; background: #f9fafb; border-radius: 10px; padding: 16px; color: #9ca3af; font-size: 14px; text-align: center; }
-  .empty-state { text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .empty-icon { font-size: 48px; }
-  .empty-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; }
-  .empty-text { color: #9ca3af; max-width: 280px; line-height: 1.6; font-size: 14px; }
-
-  .chart-wrap { margin: 8px 16px; background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  .chart-title { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-
-  /* Bottom sheet */
-  .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; z-index: 100; }
-  .sheet { background: #fff; border-radius: 20px 20px 0 0; padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 16px); width: 100%; box-shadow: 0 -4px 24px rgba(0,0,0,0.12); max-height: 85vh; overflow-y: auto; }
-  .sheet-handle { width: 36px; height: 4px; background: #e5e7eb; border-radius: 2px; margin: 12px auto 20px; }
-  .sheet-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 20px; }
-
-  /* Forms */
-  .form-section { padding: 20px 16px; }
-  .form-hint { color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 4px; }
-  .field-label { font-size: 12px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; margin-top: 16px; display: block; }
-  .field-input { width: 100%; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 13px 14px; font-size: 16px; color: #111827; outline: none; display: block; }
-  .field-input:focus { border-color: #3b6cf8; }
-
-  .currency-row { display: flex; gap: 10px; margin-bottom: 4px; }
-  .cur-btn { flex: 1; padding: 12px; border-radius: 10px; border: 1.5px solid #e5e7eb; background: #f9fafb; font-size: 15px; font-weight: 600; color: #374151; }
-  .cur-btn.active { background: #111827; border-color: #111827; color: #fff; }
-
-  .group-tabs { display: flex; gap: 6px; margin-bottom: 8px; margin-top: 4px; }
-  .group-tab { flex: 1; padding: 8px 4px; border-radius: 8px; border: 1.5px solid #e5e7eb; background: #f9fafb; font-size: 11px; color: #6b7280; }
-  .group-tab.active { background: #eff6ff; border-color: #3b6cf8; color: #3b6cf8; }
-
-  .type-list { margin-bottom: 8px; }
-  .type-item { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 13px 14px; margin-bottom: 4px; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 10px; text-align: left; font-size: 14px; color: #111827; }
-  .type-item.active { background: #eff6ff; border-color: #3b6cf8; }
-  .type-check { color: #3b6cf8; font-weight: 700; }
-
-  .primary-btn { display: block; width: 100%; margin-top: 20px; background: #111827; color: #fff; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; }
-  .primary-btn.danger { background: #dc2626; }
-  .ghost-btn { display: block; width: 100%; margin-top: 10px; background: none; color: #6b7280; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 14px; font-size: 16px; }
-  .delete-warning { color: #374151; line-height: 1.6; font-size: 15px; margin-bottom: 4px; margin-top: 0; }
-
-  .splash { display: flex; align-items: center; justify-content: center; height: 100vh; background: #111827; }
-  .splash-title { font-family: 'Fraunces', serif; font-size: 36px; color: white; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#f5f4f0;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;-webkit-appearance:none}
+input{font-family:'DM Sans',sans-serif;-webkit-appearance:none}
+#app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.shell{max-width:430px;margin:0 auto;min-height:100vh;background:#f5f4f0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,44px) 16px 12px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0}
+.topbar-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:#111827;text-align:center;flex:1}
+.topbar-side{width:64px;display:flex}
+.topbar-side.right{justify-content:flex-end}
+.topbar-btn{background:none;border:none;color:#3b6cf8;font-size:16px;font-weight:500;padding:8px 0;min-height:44px}
+.topbar-btn.danger{color:#e05c3a}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:48px}
+.owner-scroll{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.owner-scroll::-webkit-scrollbar{display:none}
+.owner-chip{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #e5e7eb;border-radius:20px;padding:8px 14px;white-space:nowrap;flex-shrink:0;font-size:14px;font-weight:500;color:#111827;min-height:44px}
+.owner-chip.active{background:#111827;border-color:#111827;color:#fff}
+.owner-chip-add{display:flex;align-items:center;background:none;border:1.5px dashed #d1d5db;border-radius:20px;padding:8px 14px;color:#6b7280;font-size:14px;white-space:nowrap;flex-shrink:0;min-height:44px}
+.banner{margin:0 16px 12px;background:#111827;border-radius:16px;padding:14px 16px}
+.banner-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.banner-cur-row{display:flex;gap:6px}
+.banner-cur-btn{background:none;border:1px solid #374151;color:#6b7280;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;min-height:36px}
+.banner-cur-btn.active{background:#374151;border-color:#374151;color:#f9fafb}
+.fx-btn{background:none;border:1px solid #374151;color:#9ca3af;border-radius:8px;padding:8px 10px;font-size:11px;min-height:36px}
+.banner-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 0}
+.banner-stat-label{color:#6b7280;font-size:11px;margin-bottom:2px}
+.banner-stat-value{font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:#f9fafb}
+.banner-stat-value.pos{color:#4ade80}
+.banner-stat-value.neg{color:#f87171}
+.banner-fx-note{margin-top:12px;font-size:10px;color:#4b5563;border-top:1px solid #1f2937;padding-top:8px}
+.empty-banner{margin:0 16px 12px;background:#f3f4f6;border-radius:16px;padding:20px;color:#9ca3af;text-align:center;font-size:14px}
+.section-label{padding:16px 16px 6px;font-size:11px;color:#9ca3af;letter-spacing:1px;font-weight:600;text-transform:uppercase}
+.acct-row{display:flex;align-items:center;background:#fff;margin:0 16px 8px;border-radius:12px;padding:14px 12px;border:none;width:calc(100% - 32px);text-align:left;box-shadow:0 1px 3px rgba(0,0,0,0.06);min-height:60px}
+.acct-row-left{flex:1}
+.acct-row-name{font-size:15px;font-weight:600;color:#111827;margin-bottom:2px}
+.acct-row-type{font-size:12px;color:#9ca3af}
+.acct-row-right{text-align:right;margin-right:6px}
+.acct-row-value{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#111827}
+.acct-row-converted{font-size:11px;color:#9ca3af;margin-top:1px}
+.acct-row-roi{font-size:12px;font-weight:600;margin-top:2px}
+.chevron{color:#d1d5db;font-size:22px;line-height:1}
+.new-acct-btn{display:block;margin:8px 16px 0;width:calc(100% - 32px);background:none;border:1.5px dashed #d1d5db;border-radius:12px;padding:16px;color:#6b7280;font-size:15px;min-height:52px}
+.acct-meta{display:flex;gap:8px;padding:12px 16px 0;flex-wrap:wrap}
+.badge{display:inline-block;font-size:12px;background:#fef3c7;color:#92400e;border-radius:20px;padding:4px 10px}
+.badge.blue{background:#eef2ff;color:#4f46e5}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px}
+.met-card{background:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.met-card.wide{grid-column:1 / -1}
+.met-label{font-size:10px;color:#9ca3af;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px}
+.met-value{font-family:'Fraunces',serif;font-size:17px;font-weight:700;color:#111827}
+.met-value.muted{color:#9ca3af}
+.met-value.pos{color:#16a34a}
+.met-value.neg{color:#dc2626}
+.met-sub{font-size:10px;color:#9ca3af;margin-top:3px}
+.section-head{display:flex;justify-content:space-between;align-items:center;padding:16px 16px 8px}
+.section-head-title{font-size:13px;font-weight:600;color:#6b7280;letter-spacing:0.5px;text-transform:uppercase}
+.section-add-btn{background:#eff6ff;border:none;color:#3b6cf8;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;min-height:36px}
+.log-row-wrap{position:relative;overflow:hidden;margin:0 16px 1px}
+.log-row{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:13px 14px;border-radius:10px;transition:transform 0.2s;will-change:transform}
+.log-left{flex:1}
+.log-date{font-size:14px;color:#374151;font-weight:500}
+.log-note{font-size:12px;color:#9ca3af;margin-top:2px}
+.log-main{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#111827}
+.del-btn{position:absolute;right:0;top:0;bottom:0;width:72px;background:#dc2626;color:white;border:none;font-size:13px;font-weight:600;border-radius:0 10px 10px 0;display:none}
+.empty-row{margin:0 16px 8px;background:#f9fafb;border-radius:10px;padding:16px;color:#9ca3af;font-size:14px;text-align:center}
+.chart-wrap{margin:8px 16px;background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.chart-title{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;z-index:100}
+.sheet{background:#fff;border-radius:20px 20px 0 0;padding:0 16px calc(env(safe-area-inset-bottom,16px) + 16px);width:100%;box-shadow:0 -4px 24px rgba(0,0,0,0.12);max-height:85vh;overflow-y:auto}
+.sheet-handle{width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:14px auto 20px}
+.sheet-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:#111827;margin-bottom:20px}
+.form-section{padding:20px 16px}
+.form-hint{color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:4px}
+.field-label{font-size:12px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;margin-top:18px;display:block}
+.field-input{width:100%;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;padding:14px;font-size:16px;color:#111827;outline:none;display:block}
+.field-input:focus{border-color:#3b6cf8}
+.cur-row{display:flex;gap:10px;margin-top:6px}
+.cur-btn{flex:1;padding:14px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:15px;font-weight:600;color:#374151;min-height:50px}
+.cur-btn.active{background:#111827;border-color:#111827;color:#fff}
+.group-tabs{display:flex;gap:6px;margin-top:6px;margin-bottom:8px}
+.group-tab{flex:1;padding:10px 4px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:11px;color:#6b7280;min-height:40px}
+.group-tab.active{background:#eff6ff;border-color:#3b6cf8;color:#3b6cf8}
+.type-list{margin-bottom:8px}
+.type-item{display:flex;justify-content:space-between;align-items:center;width:100%;padding:14px;margin-bottom:4px;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;text-align:left;font-size:14px;color:#111827;min-height:50px}
+.type-item.active{background:#eff6ff;border-color:#3b6cf8}
+.type-check{color:#3b6cf8;font-weight:700;font-size:16px}
+.primary-btn{display:block;width:100%;margin-top:20px;background:#111827;color:#fff;border:none;border-radius:12px;padding:17px;font-size:16px;font-weight:600;min-height:54px}
+.primary-btn.danger{background:#dc2626}
+.ghost-btn{display:block;width:100%;margin-top:10px;background:none;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:12px;padding:15px;font-size:16px;min-height:52px}
+.del-warn{color:#374151;line-height:1.6;font-size:15px;margin:12px 0 4px}
+.splash{display:flex;align-items:center;justify-content:center;height:100vh;background:#111827}
+.splash-title{font-family:'Fraunces',serif;font-size:36px;color:white}
 </style>
 </head>
 <body>
 <div id="app"><div class="splash"><div class="splash-title">Ledger</div></div></div>
-
 <script>
-// ── Storage (localStorage for standalone) ─────────────────────────────────────
-const SK = 'ledger-standalone-v1';
-function loadData() {
-  try { const r = localStorage.getItem(SK); if (r) return JSON.parse(r); } catch {}
-  return null;
-}
-function saveData(d) {
-  try { localStorage.setItem(SK, JSON.stringify(d)); } catch {}
-}
+'use strict';
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+const SK = 'ledger-v4';
+function load() { try { const r = localStorage.getItem(SK); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
+function save(d) { try { localStorage.setItem(SK, JSON.stringify(d)); } catch(e) {} }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const uid = () => Math.random().toString(36).slice(2, 9);
-const todayStr = () => new Date().toISOString().slice(0, 10);
+function uid() { return Math.random().toString(36).slice(2,9); }
+function todayStr() { return new Date().toISOString().slice(0,10); }
 
-const ACCOUNT_TYPES = {
+const ACCT_TYPES = {
   '🇬🇧 UK': ['Stocks & Shares ISA','Cash ISA','Lifetime ISA (LISA)','Junior ISA (JISA)','SIPP','Workplace Pension','General Investment Account','Junior SIPP'],
   '🇫🇮 Finland': ['Osakesäästötili (OST)','Sijoitusrahasto','Eläkevakuutus','Kapitalisaatiosopimus','Arvo-osuustili','PS-tili (Pitkäaikaissäästäminen)'],
-  'Other': ['Other'],
+  'Other': ['Other']
 };
-const ALL_TYPES = Object.values(ACCOUNT_TYPES).flat();
-const CURRENCIES = [{code:'EUR',symbol:'€'},{code:'GBP',symbol:'£'}];
-const DEFAULT_FX = {GBP_TO_EUR: 1.17};
+const ALL_TYPES = Object.values(ACCT_TYPES).flat();
+const CURRENCIES = [{code:'EUR',sym:'€'},{code:'GBP',sym:'£'}];
+const DEFAULT_FX = {GBP_TO_EUR:1.17};
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function symFor(c) { return c === 'EUR' ? '€' : '£'; }
-function fmt(n, currency) {
-  if (n == null || isNaN(n)) return '—';
-  const sym = symFor(currency), abs = Math.abs(n), sign = n < 0 ? '-' : '';
-  if (abs >= 1e6) return sign+sym+(abs/1e6).toFixed(2)+'m';
-  if (abs >= 1e3) return sign+sym+(abs/1e3).toFixed(1)+'k';
-  return sign+sym+abs.toFixed(2);
+// ── Format ────────────────────────────────────────────────────────────────────
+function sym(c) { return c==='EUR'?'€':'£'; }
+function fmt(n,c) {
+  if(n==null||isNaN(n)) return '—';
+  const s=sym(c),a=Math.abs(n),sg=n<0?'-':'';
+  if(a>=1e6) return sg+s+(a/1e6).toFixed(2)+'m';
+  if(a>=1e3) return sg+s+(a/1e3).toFixed(1)+'k';
+  return sg+s+a.toFixed(2);
 }
-function fmtFull(n, currency) {
-  if (n == null || isNaN(n)) return '—';
-  return new Intl.NumberFormat('en-GB',{style:'currency',currency}).format(n);
+function fmtFull(n,c) {
+  if(n==null||isNaN(n)) return '—';
+  return new Intl.NumberFormat('en-GB',{style:'currency',currency:c}).format(n);
 }
-function fmtPct(n) {
-  if (n == null || isNaN(n)) return '—';
-  return (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
+function fmtPct(n) { if(n==null||isNaN(n)) return '—'; return (n>=0?'+':'')+n.toFixed(1)+'%'; }
+function fmtDate(iso) { if(!iso) return ''; return new Date(iso+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtShort(iso) { if(!iso) return ''; return new Date(iso+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+
+// ── Calc ──────────────────────────────────────────────────────────────────────
+function conv(amt,from,to,fx) {
+  if(from===to) return amt;
+  const r=(fx&&fx.GBP_TO_EUR)||DEFAULT_FX.GBP_TO_EUR;
+  if(from==='GBP'&&to==='EUR') return amt*r;
+  if(from==='EUR'&&to==='GBP') return amt/r;
+  return amt;
 }
-function fmtDate(iso) {
-  if (!iso) return '';
-  return new Date(iso+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-}
-function fmtDateShort(iso) {
-  if (!iso) return '';
-  return new Date(iso+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-}
-function convert(amount, from, to, fx) {
-  if (from === to) return amount;
-  const rate = (fx && fx.GBP_TO_EUR) || DEFAULT_FX.GBP_TO_EUR;
-  if (from === 'GBP' && to === 'EUR') return amount * rate;
-  if (from === 'EUR' && to === 'GBP') return amount / rate;
-  return amount;
-}
-function calcMetrics(acct) {
-  const contribs = (acct.contributions||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
-  const valuations = (acct.valuations||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
-  const totalContributed = contribs.reduce((s,c)=>s+c.amount,0);
-  const latestVal = valuations.length ? valuations[valuations.length-1].value : null;
-  const absoluteGain = latestVal != null ? latestVal - totalContributed : null;
-  const roi = totalContributed > 0 && latestVal != null ? ((latestVal-totalContributed)/totalContributed)*100 : null;
-  let simpleDietz = null;
-  if (valuations.length >= 2) {
-    const startVal = valuations[0].value, endVal = valuations[valuations.length-1].value;
-    const cf = contribs.filter(c=>c.date>valuations[0].date).reduce((s,c)=>s+c.amount,0);
-    const denom = startVal + cf*0.5;
-    if (denom > 0) simpleDietz = ((endVal-startVal-cf)/denom)*100;
+function metrics(acct) {
+  const cs=(acct.contributions||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const vs=(acct.valuations||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const contributed=cs.reduce((s,c)=>s+c.amount,0);
+  const latest=vs.length?vs[vs.length-1].value:null;
+  const gain=latest!=null?latest-contributed:null;
+  const roi=contributed>0&&latest!=null?((latest-contributed)/contributed)*100:null;
+  let sd=null;
+  if(vs.length>=2){
+    const sv=vs[0].value,ev=vs[vs.length-1].value;
+    const cf=cs.filter(c=>c.date>vs[0].date).reduce((s,c)=>s+c.amount,0);
+    const den=sv+cf*0.5;
+    if(den>0) sd=((ev-sv-cf)/den)*100;
   }
-  return {totalContributed, latestVal, absoluteGain, roi, simpleDietz};
+  return {contributed,latest,gain,roi,sd};
 }
-function ownerAggregate(accts, displayCurrency, fx) {
-  let totalContributed = 0, totalValue = 0, hasValue = false;
-  accts.forEach(a => {
-    const m = calcMetrics(a), cur = a.currency||'GBP';
-    totalContributed += convert(m.totalContributed, cur, displayCurrency, fx);
-    if (m.latestVal != null) { totalValue += convert(m.latestVal, cur, displayCurrency, fx); hasValue = true; }
+function aggregate(accts,dc,fx) {
+  let tc=0,tv=0,hv=false;
+  accts.forEach(a=>{
+    const m=metrics(a),c=a.currency||'GBP';
+    tc+=conv(m.contributed,c,dc,fx);
+    if(m.latest!=null){tv+=conv(m.latest,c,dc,fx);hv=true;}
   });
-  const gain = hasValue ? totalValue - totalContributed : null;
-  const roi = hasValue && totalContributed > 0 ? ((totalValue-totalContributed)/totalContributed)*100 : null;
-  return {totalContributed, totalValue: hasValue?totalValue:null, gain, roi};
+  const gain=hv?tv-tc:null;
+  const roi=hv&&tc>0?((tv-tc)/tc)*100:null;
+  return {tc,tv:hv?tv:null,gain,roi};
 }
 
-// ── App State ─────────────────────────────────────────────────────────────────
-let data = loadData() || {
-  owners: [{id:'me', name:'My Accounts', emoji:'👤', displayCurrency:'EUR'}],
-  accounts: {me: []},
-  fx: DEFAULT_FX,
+// ── State ─────────────────────────────────────────────────────────────────────
+let data = load() || {
+  owners:[{id:'me',name:'My Accounts',emoji:'👤',displayCurrency:'EUR'}],
+  accounts:{me:[]},
+  fx:DEFAULT_FX
 };
-let ownerIdx = 0;
-let screen = 'dashboard'; // dashboard | account | newAccount | newOwner
-let activeAcctId = null;
-let sheet = null; // null | contribution | valuation | deleteAcct | deleteOwner | fxRate
-let form = {};
-let acctTypeGroup = '🇬🇧 UK';
+let ownerIdx=0;
+let screen='dashboard';
+let activeAcctId=null;
+let sheet=null;
+let form={};
+let typeGroup='🇬🇧 UK';
 
-function persist(next) { data = next; saveData(data); render(); }
-function owner() { return data.owners[ownerIdx] || data.owners[0]; }
-function ownerAccts() { return data.accounts[owner().id] || []; }
-function displayCurrency() { return owner().displayCurrency || 'EUR'; }
-function fx() { return data.fx || DEFAULT_FX; }
-function activeAcct() { return ownerAccts().find(a => a.id === activeAcctId); }
+// ── Accessors ─────────────────────────────────────────────────────────────────
+function owner(){return data.owners[ownerIdx]||data.owners[0];}
+function accts(){return data.accounts[owner().id]||[];}
+function dc(){return owner().displayCurrency||'EUR';}
+function fx(){return data.fx||DEFAULT_FX;}
+function activeAcct(){return accts().find(a=>a.id===activeAcctId);}
 
 // ── Mutations ─────────────────────────────────────────────────────────────────
-function setOwnerAccts(accts) {
-  persist({...data, accounts: {...data.accounts, [owner().id]: accts}});
-}
-function addOwner() {
-  if (!form.name || !form.name.trim()) return;
-  const o = {id: uid(), name: form.name.trim(), emoji: form.emoji||'🧒', displayCurrency: form.displayCurrency||'EUR'};
-  const next = {...data, owners: [...data.owners, o], accounts: {...data.accounts, [o.id]: []}};
-  ownerIdx = next.owners.length - 1;
-  screen = 'dashboard'; form = {};
+function setAccts(a){persist({...data,accounts:{...data.accounts,[owner().id]:a}});}
+function persist(d){data=d;save(data);render();}
+
+function doAddOwner(){
+  const name=(document.getElementById('f-name')||{}).value||'';
+  if(!name.trim()) return;
+  const o={id:uid(),name:name.trim(),emoji:form.emoji||'🧒',displayCurrency:form.displayCurrency||'EUR'};
+  const next={...data,owners:[...data.owners,o],accounts:{...data.accounts,[o.id]:[]}};
+  ownerIdx=next.owners.length-1; screen='dashboard'; form={};
   persist(next);
 }
-function addAccount() {
-  if (!form.name || !form.name.trim()) return;
-  const acct = {id:uid(), name:form.name.trim(), type:form.type||ALL_TYPES[0], currency:form.currency||'EUR', contributions:[], valuations:[], createdAt:todayStr()};
-  setOwnerAccts([...ownerAccts(), acct]);
-  screen = 'dashboard'; form = {};
+function doAddAccount(){
+  const name=(document.getElementById('f-name')||{}).value||'';
+  if(!name.trim()) return;
+  const a={id:uid(),name:name.trim(),type:form.type||ALL_TYPES[0],currency:form.currency||'EUR',contributions:[],valuations:[],createdAt:todayStr()};
+  setAccts([...accts(),a]); screen='dashboard'; form={};
 }
-function addContribution() {
-  const amount = parseFloat(form.amount);
-  if (!amount || !form.date) return;
-  const entry = {id:uid(), date:form.date, amount, note:form.note||''};
-  setOwnerAccts(ownerAccts().map(a => a.id !== activeAcctId ? a : {
-    ...a, contributions: [...a.contributions, entry].sort((x,y)=>x.date.localeCompare(y.date))
-  }));
-  sheet = null; form = {};
+function doAddContribution(){
+  const date=(document.getElementById('s-date')||{}).value||'';
+  const amount=parseFloat((document.getElementById('s-amount')||{}).value||'');
+  const note=(document.getElementById('s-note')||{}).value||'';
+  if(!amount||!date) return;
+  const entry={id:uid(),date,amount,note};
+  setAccts(accts().map(a=>a.id!==activeAcctId?a:{...a,contributions:[...a.contributions,entry].sort((x,y)=>x.date.localeCompare(y.date))}));
+  sheet=null; form={};
 }
-function addValuation() {
-  const value = parseFloat(form.value);
-  if (!value || !form.date) return;
-  const entry = {id:uid(), date:form.date, value, note:form.note||''};
-  setOwnerAccts(ownerAccts().map(a => a.id !== activeAcctId ? a : {
-    ...a, valuations: [...a.valuations.filter(v=>v.date!==form.date), entry].sort((x,y)=>x.date.localeCompare(y.date))
-  }));
-  sheet = null; form = {};
+function doAddValuation(){
+  const date=(document.getElementById('s-date')||{}).value||'';
+  const value=parseFloat((document.getElementById('s-value')||{}).value||'');
+  const note=(document.getElementById('s-note')||{}).value||'';
+  if(!value||!date) return;
+  const entry={id:uid(),date,value,note};
+  setAccts(accts().map(a=>a.id!==activeAcctId?a:{...a,valuations:[...a.valuations.filter(v=>v.date!==date),entry].sort((x,y)=>x.date.localeCompare(y.date))}));
+  sheet=null; form={};
 }
-function deleteItem(type, id) {
-  setOwnerAccts(ownerAccts().map(a => a.id !== activeAcctId ? a : {
+function doDeleteItem(type,id){
+  setAccts(accts().map(a=>a.id!==activeAcctId?a:{
     ...a,
-    contributions: type==='contribution' ? a.contributions.filter(c=>c.id!==id) : a.contributions,
-    valuations: type==='valuation' ? a.valuations.filter(v=>v.id!==id) : a.valuations,
+    contributions:type==='c'?a.contributions.filter(c=>c.id!==id):a.contributions,
+    valuations:type==='v'?a.valuations.filter(v=>v.id!==id):a.valuations
   }));
 }
-function deleteAccount() {
-  setOwnerAccts(ownerAccts().filter(a=>a.id!==activeAcctId));
-  activeAcctId = null; screen = 'dashboard'; sheet = null;
+function doDeleteAccount(){
+  setAccts(accts().filter(a=>a.id!==activeAcctId));
+  activeAcctId=null; screen='dashboard'; sheet=null;
 }
-function deleteOwner() {
-  if (owner().id === 'me') return;
-  const owners = data.owners.filter(o=>o.id!==owner().id);
-  const accounts = {...data.accounts}; delete accounts[owner().id];
-  ownerIdx = 0; screen = 'dashboard'; sheet = null;
-  persist({...data, owners, accounts});
+function doDeleteOwner(){
+  if(owner().id==='me') return;
+  const owners=data.owners.filter(o=>o.id!==owner().id);
+  const accounts={...data.accounts}; delete accounts[owner().id];
+  ownerIdx=0; screen='dashboard'; sheet=null;
+  persist({...data,owners,accounts});
 }
-function saveDisplayCurrency(cur) {
-  const owners = data.owners.map(o => o.id===owner().id ? {...o, displayCurrency:cur} : o);
-  persist({...data, owners}); sheet = null;
+function doSaveDisplayCurrency(cur){
+  const owners=data.owners.map(o=>o.id===owner().id?{...o,displayCurrency:cur}:o);
+  persist({...data,owners}); sheet=null;
 }
-function saveFxRate() {
-  const rate = parseFloat(form.fxRate);
-  if (!rate || rate <= 0) return;
-  persist({...data, fx:{GBP_TO_EUR:rate, updatedAt:todayStr()}});
-  sheet = null; form = {};
-}
-
-// ── Swipe tracking ────────────────────────────────────────────────────────────
-const swipedRows = new Set();
-function setupSwipe(wrap, rowEl, deleteBtn, type, id) {
-  let startX = 0;
-  rowEl.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
-  rowEl.addEventListener('touchend', e => {
-    const dx = startX - e.changedTouches[0].clientX;
-    if (dx > 40) { rowEl.style.transform = 'translateX(-72px)'; deleteBtn.style.display = 'block'; swipedRows.add(wrap); }
-    else { rowEl.style.transform = ''; deleteBtn.style.display = 'none'; swipedRows.delete(wrap); }
-  }, {passive:true});
-  wrap.addEventListener('click', () => {
-    if (swipedRows.has(wrap)) { rowEl.style.transform = ''; deleteBtn.style.display = 'none'; swipedRows.delete(wrap); }
-  });
-  deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteItem(type, id); });
+function doSaveFx(){
+  const rate=parseFloat((document.getElementById('s-fx')||{}).value||'');
+  if(!rate||rate<=0) return;
+  persist({...data,fx:{GBP_TO_EUR:rate,updatedAt:todayStr()}});
+  sheet=null; form={};
 }
 
 // ── Sparkline ─────────────────────────────────────────────────────────────────
-function buildSparkline(valuations) {
-  const vals = [...valuations].sort((a,b)=>a.date.localeCompare(b.date));
-  if (vals.length < 2) return '';
-  const W=320, H=80, PL=8, PR=8, PT=8, PB=28;
-  const minV = Math.min(...vals.map(v=>v.value));
-  const maxV = Math.max(...vals.map(v=>v.value));
-  const range = maxV - minV || 1;
-  const xOf = i => PL + (i/Math.max(vals.length-1,1))*(W-PL-PR);
-  const yOf = v => PT + (1-(v-minV)/range)*(H-PT-PB);
-  const pts = vals.map((v,i)=>`${xOf(i)},${yOf(v.value)}`).join(' ');
-  const area = `${xOf(0)},${H-PB} ${pts} ${xOf(vals.length-1)},${H-PB}`;
-  const lc = vals[vals.length-1].value >= vals[0].value ? '#16a34a' : '#dc2626';
-  const dots = vals.map((v,i)=>`<circle cx="${xOf(i)}" cy="${yOf(v.value)}" r="3" fill="${lc}"/><text x="${xOf(i)}" y="${H-6}" text-anchor="middle" style="font-size:8px;fill:#9ca3af;font-family:DM Sans">${fmtDateShort(v.date)}</text>`).join('');
+function sparkline(valuations){
+  const vs=[...valuations].sort((a,b)=>a.date.localeCompare(b.date));
+  if(vs.length<2) return '';
+  const W=320,H=80,PL=8,PR=8,PT=8,PB=28;
+  const mn=Math.min(...vs.map(v=>v.value)),mx=Math.max(...vs.map(v=>v.value)),rng=mx-mn||1;
+  const xf=i=>PL+(i/Math.max(vs.length-1,1))*(W-PL-PR);
+  const yf=v=>PT+(1-(v-mn)/rng)*(H-PT-PB);
+  const pts=vs.map((v,i)=>xf(i)+','+yf(v.value)).join(' ');
+  const area=xf(0)+','+(H-PB)+' '+pts+' '+xf(vs.length-1)+','+(H-PB);
+  const lc=vs[vs.length-1].value>=vs[0].value?'#16a34a':'#dc2626';
+  const dots=vs.map((v,i)=>`<circle cx="${xf(i)}" cy="${yf(v.value)}" r="3" fill="${lc}"/><text x="${xf(i)}" y="${H-6}" text-anchor="middle" style="font-size:8px;fill:#9ca3af">${fmtShort(v.date)}</text>`).join('');
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lc}" stop-opacity="0.2"/><stop offset="100%" stop-color="${lc}" stop-opacity="0"/></linearGradient></defs><polygon points="${area}" fill="url(#sg)"/><polyline points="${pts}" fill="none" stroke="${lc}" stroke-width="2" stroke-linejoin="round"/>${dots}</svg>`;
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
-function render() {
-  const app = document.getElementById('app');
-  const o = owner(), accts = ownerAccts(), dc = displayCurrency(), fxRate = fx();
-  const acct = activeAcct();
+function render(){
+  const app=document.getElementById('app');
+  const o=owner(),as=accts(),d=dc(),f=fx(),acct=activeAcct();
 
-  // ── NEW OWNER ──
-  if (screen === 'newOwner') {
-    app.innerHTML = `
-      <div class="shell">
-        <div class="topbar">
-          <div class="topbar-side"><button class="topbar-btn" onclick="screen='dashboard';form={};render()">‹ Back</button></div>
-          <div class="topbar-title">Add Person</div>
-          <div class="topbar-side right"></div>
+  // NEW OWNER
+  if(screen==='newOwner'){
+    app.innerHTML=`<div class="shell">
+      <div class="topbar">
+        <div class="topbar-side"><button class="topbar-btn" data-action="back">‹ Back</button></div>
+        <div class="topbar-title">Add Person</div>
+        <div class="topbar-side right"></div>
+      </div>
+      <div class="scroll-area"><div class="form-section">
+        <p class="form-hint">Add a child or partner whose investments you manage.</p>
+        <label class="field-label">Name</label>
+        <input class="field-input" id="f-name" placeholder="e.g. Emma" value="${esc(form.name||'')}">
+        <label class="field-label">Emoji (optional)</label>
+        <input class="field-input" id="f-emoji" placeholder="🧒" value="${esc(form.emoji||'')}">
+        <label class="field-label">Display Currency</label>
+        <div class="cur-row">
+          ${CURRENCIES.map(c=>`<button class="cur-btn${(form.displayCurrency||'EUR')===c.code?' active':''}" data-action="set-owner-cur" data-val="${c.code}">${c.sym} ${c.code}</button>`).join('')}
         </div>
-        <div class="scroll-area">
-          <div class="form-section">
-            <p class="form-hint">Add a child or partner whose investments you manage.</p>
-            <label class="field-label">Name</label>
-            <input class="field-input" id="f-name" placeholder="e.g. Emma" value="${form.name||''}">
-            <label class="field-label">Emoji (optional)</label>
-            <input class="field-input" id="f-emoji" placeholder="🧒" value="${form.emoji||''}">
-            <label class="field-label">Display Currency</label>
-            <div class="currency-row">
-              ${CURRENCIES.map(c=>`<button class="cur-btn ${(form.displayCurrency||'EUR')===c.code?'active':''}" onclick="form.displayCurrency='${c.code}';render()">${c.symbol} ${c.code}</button>`).join('')}
-            </div>
-            <button class="primary-btn" onclick="form.name=document.getElementById('f-name').value;form.emoji=document.getElementById('f-emoji').value;addOwner()">Add Person</button>
-          </div>
-        </div>
-      </div>`;
+        <button class="primary-btn" data-action="add-owner">Add Person</button>
+      </div></div>
+    </div>`;
     return;
   }
 
-  // ── NEW ACCOUNT ──
-  if (screen === 'newAccount') {
-    app.innerHTML = `
-      <div class="shell">
-        <div class="topbar">
-          <div class="topbar-side"><button class="topbar-btn" onclick="screen='dashboard';form={};render()">‹ Back</button></div>
-          <div class="topbar-title">New Account</div>
-          <div class="topbar-side right"></div>
+  // NEW ACCOUNT
+  if(screen==='newAccount'){
+    app.innerHTML=`<div class="shell">
+      <div class="topbar">
+        <div class="topbar-side"><button class="topbar-btn" data-action="back">‹ Back</button></div>
+        <div class="topbar-title">New Account</div>
+        <div class="topbar-side right"></div>
+      </div>
+      <div class="scroll-area"><div class="form-section">
+        <label class="field-label">Account Name</label>
+        <input class="field-input" id="f-name" placeholder="e.g. Vanguard ISA" value="${esc(form.name||'')}">
+        <label class="field-label">Account Currency</label>
+        <div class="cur-row">
+          ${CURRENCIES.map(c=>`<button class="cur-btn${(form.currency||'EUR')===c.code?' active':''}" data-action="set-acct-cur" data-val="${c.code}">${c.sym} ${c.code}</button>`).join('')}
         </div>
-        <div class="scroll-area">
-          <div class="form-section">
-            <label class="field-label">Account Name</label>
-            <input class="field-input" id="f-name" placeholder="e.g. Vanguard ISA" value="${form.name||''}">
-            <label class="field-label">Account Currency</label>
-            <div class="currency-row">
-              ${CURRENCIES.map(c=>`<button class="cur-btn ${(form.currency||'EUR')===c.code?'active':''}" onclick="form.currency='${c.code}';render()">${c.symbol} ${c.code}</button>`).join('')}
-            </div>
-            <label class="field-label">Account Type</label>
-            <div class="group-tabs">
-              ${Object.keys(ACCOUNT_TYPES).map(g=>`<button class="group-tab ${acctTypeGroup===g?'active':''}" onclick="acctTypeGroup='${g}';form.type='${ACCOUNT_TYPES[g][0]}';render()">${g}</button>`).join('')}
-            </div>
-            <div class="type-list">
-              ${ACCOUNT_TYPES[acctTypeGroup].map(t=>`<button class="type-item ${(form.type||ALL_TYPES[0])===t?'active':''}" onclick="form.type='${t}';render()"><span>${t}</span>${(form.type||ALL_TYPES[0])===t?'<span class="type-check">✓</span>':''}</button>`).join('')}
-            </div>
-            <button class="primary-btn" onclick="form.name=document.getElementById('f-name').value;addAccount()">Create Account</button>
-          </div>
+        <label class="field-label">Account Type</label>
+        <div class="group-tabs">
+          ${Object.keys(ACCT_TYPES).map(g=>`<button class="group-tab${typeGroup===g?' active':''}" data-action="set-group" data-val="${esc(g)}">${g}</button>`).join('')}
         </div>
-      </div>`;
+        <div class="type-list">
+          ${ACCT_TYPES[typeGroup].map(t=>`<button class="type-item${(form.type||ALL_TYPES[0])===t?' active':''}" data-action="set-type" data-val="${esc(t)}"><span>${t}</span>${(form.type||ALL_TYPES[0])===t?'<span class="type-check">✓</span>':''}</button>`).join('')}
+        </div>
+        <button class="primary-btn" data-action="add-account">Create Account</button>
+      </div></div>
+    </div>`;
     return;
   }
 
-  // ── ACCOUNT DETAIL ──
-  if (screen === 'account' && acct) {
-    const m = calcMetrics(acct);
-    const cur = acct.currency||'GBP';
-    const sym = symFor(cur);
-    const needsConv = cur !== dc;
-    const gainClass = m.absoluteGain == null ? 'muted' : m.absoluteGain >= 0 ? 'pos' : 'neg';
-    const roiClass = m.roi == null ? 'muted' : m.roi >= 0 ? 'pos' : 'neg';
-    const sdClass = m.simpleDietz == null ? 'muted' : m.simpleDietz >= 0 ? 'pos' : 'neg';
+  // ACCOUNT DETAIL
+  if(screen==='account'&&acct){
+    const m=metrics(acct),cur=acct.currency||'GBP',s=sym(cur),nc=cur!==d;
+    const gc=m.gain==null?'muted':m.gain>=0?'pos':'neg';
+    const rc=m.roi==null?'muted':m.roi>=0?'pos':'neg';
+    const sdc=m.sd==null?'muted':m.sd>=0?'pos':'neg';
 
-    const contribRows = [...(acct.contributions||[])].reverse().map(c=>`
-      <div class="log-row-wrap" id="lw-c-${c.id}">
-        <div class="log-row" id="lr-c-${c.id}">
-          <div class="log-left"><div class="log-date">${fmtDate(c.date)}</div>${c.note?`<div class="log-note">${c.note}</div>`:''}</div>
+    const cRows=[...(acct.contributions||[])].reverse().map(c=>`
+      <div class="log-row-wrap" id="w-c-${c.id}">
+        <div class="log-row" id="r-c-${c.id}">
+          <div class="log-left"><div class="log-date">${fmtDate(c.date)}</div>${c.note?`<div class="log-note">${esc(c.note)}</div>`:''}</div>
           <div class="log-main">${fmtFull(c.amount,cur)}</div>
         </div>
-        <button class="delete-slide" id="ds-c-${c.id}">Delete</button>
+        <button class="del-btn" id="d-c-${c.id}" data-action="del-item" data-type="c" data-id="${c.id}">Delete</button>
       </div>`).join('');
 
-    const valRows = [...(acct.valuations||[])].reverse().map(v=>`
-      <div class="log-row-wrap" id="lw-v-${v.id}">
-        <div class="log-row" id="lr-v-${v.id}">
-          <div class="log-left"><div class="log-date">${fmtDate(v.date)}</div>${v.note?`<div class="log-note">${v.note}</div>`:''}</div>
+    const vRows=[...(acct.valuations||[])].reverse().map(v=>`
+      <div class="log-row-wrap" id="w-v-${v.id}">
+        <div class="log-row" id="r-v-${v.id}">
+          <div class="log-left"><div class="log-date">${fmtDate(v.date)}</div>${v.note?`<div class="log-note">${esc(v.note)}</div>`:''}</div>
           <div class="log-main">${fmtFull(v.value,cur)}</div>
         </div>
-        <button class="delete-slide" id="ds-v-${v.id}">Delete</button>
+        <button class="del-btn" id="d-v-${v.id}" data-action="del-item" data-type="v" data-id="${v.id}">Delete</button>
       </div>`).join('');
 
-    const sparkHtml = acct.valuations.length >= 2 ? `<div class="chart-wrap"><div class="chart-title">Value over time</div>${buildSparkline(acct.valuations)}</div>` : '';
-
-    const sheetHtml = sheet === 'contribution' ? `
-      <div class="sheet-overlay" onclick="if(event.target===this){sheet=null;form={};render()}">
+    const sheetHtml=sheet==='contribution'?`
+      <div class="sheet-overlay" data-action="close-sheet">
         <div class="sheet">
           <div class="sheet-handle"></div>
           <div class="sheet-title">Log Contribution</div>
           <label class="field-label">Date</label>
-          <input type="date" class="field-input" id="s-date" value="${form.date||todayStr()}">
-          <label class="field-label">Amount (${sym})</label>
-          <input type="number" inputmode="decimal" class="field-input" id="s-amount" placeholder="0.00" value="${form.amount||''}">
+          <input type="date" class="field-input" id="s-date" value="${todayStr()}">
+          <label class="field-label">Amount (${s})</label>
+          <input type="number" inputmode="decimal" class="field-input" id="s-amount" placeholder="0.00">
           <label class="field-label">Note (optional)</label>
-          <input class="field-input" id="s-note" placeholder="e.g. Monthly contribution" value="${form.note||''}">
-          <button class="primary-btn" onclick="form.date=document.getElementById('s-date').value;form.amount=document.getElementById('s-amount').value;form.note=document.getElementById('s-note').value;addContribution()">Add Contribution</button>
+          <input class="field-input" id="s-note" placeholder="e.g. Monthly contribution">
+          <button class="primary-btn" data-action="add-contribution">Add Contribution</button>
+          <button class="ghost-btn" data-action="close-sheet">Cancel</button>
         </div>
-      </div>` :
-    sheet === 'valuation' ? `
-      <div class="sheet-overlay" onclick="if(event.target===this){sheet=null;form={};render()}">
+      </div>`:
+    sheet==='valuation'?`
+      <div class="sheet-overlay" data-action="close-sheet">
         <div class="sheet">
           <div class="sheet-handle"></div>
           <div class="sheet-title">Record Valuation</div>
           <label class="field-label">Date</label>
-          <input type="date" class="field-input" id="s-date" value="${form.date||todayStr()}">
-          <label class="field-label">Current Value (${sym})</label>
-          <input type="number" inputmode="decimal" class="field-input" id="s-value" placeholder="0.00" value="${form.value||''}">
+          <input type="date" class="field-input" id="s-date" value="${todayStr()}">
+          <label class="field-label">Current Value (${s})</label>
+          <input type="number" inputmode="decimal" class="field-input" id="s-value" placeholder="0.00">
           <label class="field-label">Note (optional)</label>
-          <input class="field-input" id="s-note" placeholder="e.g. End of month" value="${form.note||''}">
-          <button class="primary-btn" onclick="form.date=document.getElementById('s-date').value;form.value=document.getElementById('s-value').value;form.note=document.getElementById('s-note').value;addValuation()">Save Valuation</button>
+          <input class="field-input" id="s-note" placeholder="e.g. End of month">
+          <button class="primary-btn" data-action="add-valuation">Save Valuation</button>
+          <button class="ghost-btn" data-action="close-sheet">Cancel</button>
         </div>
-      </div>` :
-    sheet === 'deleteAcct' ? `
-      <div class="sheet-overlay" onclick="if(event.target===this){sheet=null;render()}">
+      </div>`:
+    sheet==='del-acct'?`
+      <div class="sheet-overlay" data-action="close-sheet">
         <div class="sheet">
           <div class="sheet-handle"></div>
           <div class="sheet-title">Delete Account?</div>
-          <p class="delete-warning">Permanently deletes <strong>${acct.name}</strong> and all its history.</p>
-          <button class="primary-btn danger" onclick="deleteAccount()">Delete Account</button>
-          <button class="ghost-btn" onclick="sheet=null;render()">Cancel</button>
+          <p class="del-warn">Permanently deletes <strong>${esc(acct.name)}</strong> and all its history.</p>
+          <button class="primary-btn danger" data-action="delete-account">Delete Account</button>
+          <button class="ghost-btn" data-action="close-sheet">Cancel</button>
         </div>
-      </div>` : '';
+      </div>`:'';
 
-    app.innerHTML = `
-      <div class="shell">
-        <div class="topbar">
-          <div class="topbar-side"><button class="topbar-btn" onclick="screen='dashboard';render()">‹ Back</button></div>
-          <div class="topbar-title">${acct.name}</div>
-          <div class="topbar-side right"><button class="topbar-btn danger" onclick="sheet='deleteAcct';render()">Delete</button></div>
+    app.innerHTML=`<div class="shell">
+      <div class="topbar">
+        <div class="topbar-side"><button class="topbar-btn" data-action="back">‹ Back</button></div>
+        <div class="topbar-title">${esc(acct.name)}</div>
+        <div class="topbar-side right"><button class="topbar-btn danger" data-action="open-del-acct">Delete</button></div>
+      </div>
+      <div class="scroll-area">
+        <div class="acct-meta">
+          <span class="badge">${esc(acct.type)}</span>
+          <span class="badge blue">${s} ${cur}</span>
         </div>
-        <div class="scroll-area">
-          <div class="acct-meta">
-            <span class="badge">${acct.type}</span>
-            <span class="badge blue">${sym} ${cur}</span>
-          </div>
-          <div class="metrics-grid">
-            <div class="met-card"><div class="met-label">Contributed</div><div class="met-value">${fmtFull(m.totalContributed,cur)}</div></div>
-            <div class="met-card"><div class="met-label">Current Value</div><div class="met-value ${m.latestVal==null?'muted':''}">${m.latestVal!=null?fmtFull(m.latestVal,cur):'—'}</div></div>
-            <div class="met-card"><div class="met-label">Gain / Loss</div><div class="met-value ${gainClass}">${m.absoluteGain!=null?fmtFull(m.absoluteGain,cur):'—'}</div></div>
-            <div class="met-card"><div class="met-label">ROI</div><div class="met-value ${roiClass}">${fmtPct(m.roi)}</div><div class="met-sub">vs. total contributed</div></div>
-            ${m.simpleDietz!=null?`<div class="met-card wide"><div class="met-label">Time-Weighted Return</div><div class="met-value ${sdClass}">${fmtPct(m.simpleDietz)}</div><div class="met-sub">Simple Dietz method</div></div>`:''}
-            ${needsConv&&m.latestVal!=null?`<div class="met-card wide"><div class="met-label">Value in ${dc}</div><div class="met-value">${fmtFull(convert(m.latestVal,cur,dc,fxRate),dc)}</div><div class="met-sub">£1 = €${fxRate.GBP_TO_EUR}</div></div>`:''}
-          </div>
-          <div class="section-head">
-            <span class="section-head-title">Contributions</span>
-            <button class="section-add-btn" onclick="sheet='contribution';form={date:'${todayStr()}'};render()">+ Add</button>
-          </div>
-          ${(acct.contributions||[]).length===0?'<div class="empty-row">No contributions yet</div>':contribRows}
-          <div class="section-head">
-            <span class="section-head-title">Valuations</span>
-            <button class="section-add-btn" onclick="sheet='valuation';form={date:'${todayStr()}'};render()">+ Add</button>
-          </div>
-          ${(acct.valuations||[]).length===0?'<div class="empty-row">No valuations yet — add a monthly snapshot</div>':valRows}
-          ${sparkHtml}
-          <div style="height:32px"></div>
+        <div class="metrics-grid">
+          <div class="met-card"><div class="met-label">Contributed</div><div class="met-value">${fmtFull(m.contributed,cur)}</div></div>
+          <div class="met-card"><div class="met-label">Current Value</div><div class="met-value${m.latest==null?' muted':''}">${m.latest!=null?fmtFull(m.latest,cur):'—'}</div></div>
+          <div class="met-card"><div class="met-label">Gain / Loss</div><div class="met-value ${gc}">${m.gain!=null?fmtFull(m.gain,cur):'—'}</div></div>
+          <div class="met-card"><div class="met-label">ROI</div><div class="met-value ${rc}">${fmtPct(m.roi)}</div><div class="met-sub">vs. total contributed</div></div>
+          ${m.sd!=null?`<div class="met-card wide"><div class="met-label">Time-Weighted Return</div><div class="met-value ${sdc}">${fmtPct(m.sd)}</div><div class="met-sub">Simple Dietz method</div></div>`:''}
+          ${nc&&m.latest!=null?`<div class="met-card wide"><div class="met-label">Value in ${d}</div><div class="met-value">${fmtFull(conv(m.latest,cur,d,f),d)}</div><div class="met-sub">£1 = €${f.GBP_TO_EUR}</div></div>`:''}
         </div>
-        ${sheetHtml}
-      </div>`;
+        <div class="section-head">
+          <span class="section-head-title">Contributions</span>
+          <button class="section-add-btn" data-action="open-contribution">+ Add</button>
+        </div>
+        ${(acct.contributions||[]).length===0?'<div class="empty-row">No contributions yet</div>':cRows}
+        <div class="section-head">
+          <span class="section-head-title">Valuations</span>
+          <button class="section-add-btn" data-action="open-valuation">+ Add</button>
+        </div>
+        ${(acct.valuations||[]).length===0?'<div class="empty-row">No valuations yet — add a monthly snapshot</div>':vRows}
+        ${acct.valuations.length>=2?`<div class="chart-wrap"><div class="chart-title">Value over time</div>${sparkline(acct.valuations)}</div>`:''}
+        <div style="height:40px"></div>
+      </div>
+      ${sheetHtml}
+    </div>`;
 
-    // Wire up swipe-to-delete
-    (acct.contributions||[]).forEach(c => {
-      const wrap = document.getElementById('lw-c-'+c.id);
-      const row = document.getElementById('lr-c-'+c.id);
-      const btn = document.getElementById('ds-c-'+c.id);
-      if (wrap && row && btn) setupSwipe(wrap, row, btn, 'contribution', c.id);
-    });
-    (acct.valuations||[]).forEach(v => {
-      const wrap = document.getElementById('lw-v-'+v.id);
-      const row = document.getElementById('lr-v-'+v.id);
-      const btn = document.getElementById('ds-v-'+v.id);
-      if (wrap && row && btn) setupSwipe(wrap, row, btn, 'valuation', v.id);
-    });
+    // Swipe to delete
+    [...(acct.contributions||[])].forEach(c=>bindSwipe('c',c.id));
+    [...(acct.valuations||[])].forEach(v=>bindSwipe('v',v.id));
+
+    // Stop sheet overlay closing when tapping inside sheet
+    const so=app.querySelector('.sheet-overlay');
+    if(so){
+      const sh=app.querySelector('.sheet');
+      if(sh) sh.addEventListener('click',e=>e.stopPropagation());
+    }
     return;
   }
 
-  // ── DASHBOARD ──
-  const agg = ownerAggregate(accts, dc, fxRate);
-  const hasMixed = accts.some(a => (a.currency||'GBP') !== dc);
+  // DASHBOARD
+  const agg=aggregate(as,d,f);
+  const hasMixed=as.some(a=>(a.currency||'GBP')!==d);
 
-  const bannerHtml = accts.length > 0 ? `
-    <div class="banner">
-      <div class="banner-header">
-        <div class="banner-cur-row">
-          ${CURRENCIES.map(c=>`<button class="banner-cur-btn ${dc===c.code?'active':''}" onclick="saveDisplayCurrency('${c.code}')">${c.symbol} ${c.code}</button>`).join('')}
-        </div>
-        ${hasMixed?`<button class="fx-btn" onclick="sheet='fxRate';form={fxRate:'${fxRate.GBP_TO_EUR}'};render()">£1 = €${fxRate.GBP_TO_EUR}</button>`:''}
+  const sheetHtml=sheet==='fx'?`
+    <div class="sheet-overlay" data-action="close-sheet">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Exchange Rate</div>
+        <p class="form-hint">Set the rate to convert between GBP and EUR for the total.</p>
+        <label class="field-label">£1 GBP = how many € EUR?</label>
+        <input type="number" inputmode="decimal" class="field-input" id="s-fx" placeholder="1.17" value="${f.GBP_TO_EUR}">
+        <button class="primary-btn" data-action="save-fx">Save Rate</button>
+        <button class="ghost-btn" data-action="close-sheet">Cancel</button>
       </div>
-      <div class="banner-grid">
-        <div><div class="banner-stat-label">Contributed</div><div class="banner-stat-value">${fmt(agg.totalContributed,dc)}</div></div>
-        <div><div class="banner-stat-label">Current Value</div><div class="banner-stat-value">${agg.totalValue!=null?fmt(agg.totalValue,dc):'—'}</div></div>
-        <div><div class="banner-stat-label">Gain / Loss</div><div class="banner-stat-value ${agg.gain==null?'':agg.gain>=0?'pos':'neg'}">${agg.gain!=null?fmt(agg.gain,dc):'—'}</div></div>
-        <div><div class="banner-stat-label">ROI</div><div class="banner-stat-value ${agg.roi==null?'':agg.roi>=0?'pos':'neg'}">${fmtPct(agg.roi)}</div></div>
+    </div>`:
+  sheet==='del-owner'?`
+    <div class="sheet-overlay" data-action="close-sheet">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Remove ${esc(o.name)}?</div>
+        <p class="del-warn">Removes all accounts and history for <strong>${esc(o.name)}</strong>.</p>
+        <button class="primary-btn danger" data-action="delete-owner">Remove Person</button>
+        <button class="ghost-btn" data-action="close-sheet">Cancel</button>
       </div>
-      ${hasMixed?`<div class="banner-fx-note">Mixed currencies converted at £1 = €${fxRate.GBP_TO_EUR}${fxRate.updatedAt?' · updated '+fmtDate(fxRate.updatedAt):''}</div>`:''}
-    </div>` : `<div class="empty-banner">No accounts yet</div>`;
+    </div>`:'';
 
-  const acctRows = accts.map(a => {
-    const m = calcMetrics(a), cur = a.currency||'GBP';
-    const convVal = m.latestVal!=null && cur!==dc ? convert(m.latestVal,cur,dc,fxRate) : null;
-    const roiColor = m.roi==null?'#9ca3af':m.roi>=0?'#16a34a':'#dc2626';
-    return `<button class="acct-row" onclick="activeAcctId='${a.id}';screen='account';render()">
+  const acctRows=as.map(a=>{
+    const m=metrics(a),cur=a.currency||'GBP';
+    const cv=m.latest!=null&&cur!==d?conv(m.latest,cur,d,f):null;
+    const rc=m.roi==null?'#9ca3af':m.roi>=0?'#16a34a':'#dc2626';
+    return `<button class="acct-row" data-action="open-acct" data-id="${a.id}">
       <div class="acct-row-left">
-        <div class="acct-row-name">${a.name}</div>
-        <div class="acct-row-type">${a.type} · ${symFor(cur)}${cur}</div>
+        <div class="acct-row-name">${esc(a.name)}</div>
+        <div class="acct-row-type">${esc(a.type)} · ${sym(cur)}${cur}</div>
       </div>
       <div class="acct-row-right">
-        <div class="acct-row-value">${m.latestVal!=null?fmt(m.latestVal,cur):'—'}</div>
-        ${convVal!=null?`<div class="acct-row-converted">≈ ${fmt(convVal,dc)}</div>`:''}
-        ${m.roi!=null?`<div class="acct-row-roi" style="color:${roiColor}">${fmtPct(m.roi)}</div>`:''}
+        <div class="acct-row-value">${m.latest!=null?fmt(m.latest,cur):'—'}</div>
+        ${cv!=null?`<div class="acct-row-converted">≈ ${fmt(cv,d)}</div>`:''}
+        ${m.roi!=null?`<div class="acct-row-roi" style="color:${rc}">${fmtPct(m.roi)}</div>`:''}
       </div>
       <span class="chevron">›</span>
     </button>`;
   }).join('');
 
-  const sheetHtml = sheet === 'fxRate' ? `
-    <div class="sheet-overlay" onclick="if(event.target===this){sheet=null;form={};render()}">
-      <div class="sheet">
-        <div class="sheet-handle"></div>
-        <div class="sheet-title">Exchange Rate</div>
-        <p class="form-hint">Set the rate used to convert between GBP and EUR.</p>
-        <label class="field-label">£1 GBP = how many € EUR?</label>
-        <input type="number" inputmode="decimal" class="field-input" id="s-fx" placeholder="1.17" value="${form.fxRate||''}">
-        <button class="primary-btn" onclick="form.fxRate=document.getElementById('s-fx').value;saveFxRate()">Save Rate</button>
-        <button class="ghost-btn" onclick="sheet=null;form={};render()">Cancel</button>
+  app.innerHTML=`<div class="shell">
+    <div class="topbar">
+      <div class="topbar-side"></div>
+      <div class="topbar-title">${esc(o.name)}</div>
+      <div class="topbar-side right">${o.id!=='me'?`<button class="topbar-btn danger" data-action="open-del-owner">Remove</button>`:''}</div>
+    </div>
+    <div class="scroll-area">
+      <div class="owner-scroll">
+        ${data.owners.map((ow,i)=>`<button class="owner-chip${i===ownerIdx?' active':''}" data-action="switch-owner" data-idx="${i}"><span>${ow.emoji}</span> ${esc(ow.name)}</button>`).join('')}
+        <button class="owner-chip-add" data-action="goto-new-owner">+ Add</button>
       </div>
-    </div>` :
-  sheet === 'deleteOwner' ? `
-    <div class="sheet-overlay" onclick="if(event.target===this){sheet=null;render()}">
-      <div class="sheet">
-        <div class="sheet-handle"></div>
-        <div class="sheet-title">Remove ${o.name}?</div>
-        <p class="delete-warning">Removes all accounts and history for <strong>${o.name}</strong>.</p>
-        <button class="primary-btn danger" onclick="deleteOwner()">Remove Person</button>
-        <button class="ghost-btn" onclick="sheet=null;render()">Cancel</button>
-      </div>
-    </div>` : '';
-
-  app.innerHTML = `
-    <div class="shell">
-      <div class="topbar">
-        <div class="topbar-side"></div>
-        <div class="topbar-title">${o.name}</div>
-        <div class="topbar-side right">${o.id!=='me'?`<button class="topbar-btn danger" onclick="sheet='deleteOwner';render()">Remove</button>`:''}</div>
-      </div>
-      <div class="scroll-area">
-        <div class="owner-scroll">
-          ${data.owners.map((ow,i)=>`<button class="owner-chip ${i===ownerIdx?'active':''}" onclick="ownerIdx=${i};activeAcctId=null;render()"><span>${ow.emoji}</span><span class="owner-chip" style="background:none;border:none;padding:0">${ow.name}</span></button>`).join('')}
-          <button class="owner-chip-add" onclick="screen='newOwner';form={displayCurrency:'EUR'};render()">+ Add</button>
+      ${as.length>0?`
+      <div class="banner">
+        <div class="banner-header">
+          <div class="banner-cur-row">
+            ${CURRENCIES.map(c=>`<button class="banner-cur-btn${d===c.code?' active':''}" data-action="set-dc" data-val="${c.code}">${c.sym} ${c.code}</button>`).join('')}
+          </div>
+          ${hasMixed?`<button class="fx-btn" data-action="open-fx">£1 = €${f.GBP_TO_EUR}</button>`:''}
         </div>
-        ${bannerHtml}
-        <div class="section-label">Accounts</div>
-        ${accts.length===0?'<div class="empty-row">Tap + New Account to get started</div>':acctRows}
-        <button class="new-acct-btn" onclick="form={currency:'EUR',type:ALL_TYPES[0]};acctTypeGroup='🇬🇧 UK';screen='newAccount';render()">+ New Account</button>
-        <div style="height:32px"></div>
-      </div>
-      ${sheetHtml}
-    </div>`;
+        <div class="banner-grid">
+          <div><div class="banner-stat-label">Contributed</div><div class="banner-stat-value">${fmt(agg.tc,d)}</div></div>
+          <div><div class="banner-stat-label">Current Value</div><div class="banner-stat-value">${agg.tv!=null?fmt(agg.tv,d):'—'}</div></div>
+          <div><div class="banner-stat-label">Gain / Loss</div><div class="banner-stat-value${agg.gain==null?'':agg.gain>=0?' pos':' neg'}">${agg.gain!=null?fmt(agg.gain,d):'—'}</div></div>
+          <div><div class="banner-stat-label">ROI</div><div class="banner-stat-value${agg.roi==null?'':agg.roi>=0?' pos':' neg'}">${fmtPct(agg.roi)}</div></div>
+        </div>
+        ${hasMixed?`<div class="banner-fx-note">Mixed currencies converted at £1 = €${f.GBP_TO_EUR}${f.updatedAt?' · updated '+fmtDate(f.updatedAt):''}</div>`:''}
+      </div>`:`<div class="empty-banner">No accounts yet</div>`}
+      <div class="section-label">Accounts</div>
+      ${as.length===0?'<div class="empty-row">Tap + New Account to get started</div>':acctRows}
+      <button class="new-acct-btn" data-action="goto-new-account">+ New Account</button>
+      <div style="height:40px"></div>
+    </div>
+    ${sheetHtml}
+  </div>`;
+
+  // Stop sheet from closing when tapping inside
+  const so=app.querySelector('.sheet-overlay');
+  if(so){
+    const sh=app.querySelector('.sheet');
+    if(sh) sh.addEventListener('click',e=>e.stopPropagation());
+  }
 }
+
+// ── Swipe to delete ───────────────────────────────────────────────────────────
+function bindSwipe(type,id){
+  const wrap=document.getElementById('w-'+type+'-'+id);
+  const row=document.getElementById('r-'+type+'-'+id);
+  const btn=document.getElementById('d-'+type+'-'+id);
+  if(!wrap||!row||!btn) return;
+  let sx=0;
+  row.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
+  row.addEventListener('touchend',e=>{
+    if(sx-e.changedTouches[0].clientX>40){row.style.transform='translateX(-72px)';btn.style.display='block';}
+    else{row.style.transform='';btn.style.display='none';}
+  },{passive:true});
+}
+
+// ── Event delegation ──────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.getElementById('app').addEventListener('click',function(e){
+  const btn=e.target.closest('[data-action]');
+  if(!btn) return;
+  const action=btn.dataset.action;
+  const val=btn.dataset.val||'';
+
+  switch(action){
+    case 'back': screen='dashboard'; form={}; render(); break;
+    case 'close-sheet': sheet=null; form={}; render(); break;
+
+    // Dashboard
+    case 'switch-owner': ownerIdx=parseInt(btn.dataset.idx,10); activeAcctId=null; render(); break;
+    case 'goto-new-owner': screen='newOwner'; form={displayCurrency:'EUR'}; render(); break;
+    case 'goto-new-account': form={currency:'EUR',type:ALL_TYPES[0]}; typeGroup='🇬🇧 UK'; screen='newAccount'; render(); break;
+    case 'open-acct': activeAcctId=btn.dataset.id; screen='account'; render(); break;
+    case 'set-dc': doSaveDisplayCurrency(val); break;
+    case 'open-fx': sheet='fx'; render(); break;
+    case 'save-fx': doSaveFx(); break;
+    case 'open-del-owner': sheet='del-owner'; render(); break;
+    case 'delete-owner': doDeleteOwner(); break;
+
+    // New owner
+    case 'set-owner-cur':
+      form.emoji=(document.getElementById('f-emoji')||{}).value||form.emoji||'';
+      form.displayCurrency=val; render(); break;
+    case 'add-owner':
+      form.emoji=(document.getElementById('f-emoji')||{}).value||'';
+      doAddOwner(); break;
+
+    // New account
+    case 'set-acct-cur':
+      form.name=(document.getElementById('f-name')||{}).value||form.name||'';
+      form.currency=val; render(); break;
+    case 'set-group':
+      form.name=(document.getElementById('f-name')||{}).value||form.name||'';
+      form.currency=form.currency||'EUR';
+      typeGroup=val; form.type=ACCT_TYPES[val][0]; render(); break;
+    case 'set-type':
+      form.name=(document.getElementById('f-name')||{}).value||form.name||'';
+      form.currency=form.currency||'EUR';
+      form.type=val; render(); break;
+    case 'add-account':
+      form.name=(document.getElementById('f-name')||{}).value||'';
+      doAddAccount(); break;
+
+    // Account detail
+    case 'open-contribution': sheet='contribution'; render(); break;
+    case 'open-valuation': sheet='valuation'; render(); break;
+    case 'add-contribution': doAddContribution(); break;
+    case 'add-valuation': doAddValuation(); break;
+    case 'open-del-acct': sheet='del-acct'; render(); break;
+    case 'delete-account': doDeleteAccount(); break;
+    case 'del-item': doDeleteItem(btn.dataset.type, btn.dataset.id); break;
+  }
+});
 
 render();
 </script>
