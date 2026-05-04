@@ -76,6 +76,7 @@ input{font-family:'DM Sans',sans-serif;-webkit-appearance:none}
 .empty-row{margin:0 16px 8px;background:#f9fafb;border-radius:10px;padding:16px;color:#9ca3af;font-size:14px;text-align:center}
 .chart-wrap{margin:8px 16px;background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .chart-title{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.chart-hint{margin:12px 16px 0;font-size:12px;color:#9ca3af;text-align:center;padding:12px;background:#f9fafb;border-radius:10px}
 .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;z-index:100}
 .sheet{background:#fff;border-radius:20px 20px 0 0;padding:0 16px calc(env(safe-area-inset-bottom,16px) + 16px);width:100%;box-shadow:0 -4px 24px rgba(0,0,0,0.12);max-height:85vh;overflow-y:auto}
 .sheet-handle{width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:14px auto 20px}
@@ -110,7 +111,18 @@ input{font-family:'DM Sans',sans-serif;-webkit-appearance:none}
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 const SK = 'ledger-v4';
-function load() { try { const r = localStorage.getItem(SK); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
+const OLD_KEYS = ['ledger-standalone-v1','ledger-uk-fi-v1','ledger-uk-fi-v2','ledger-uk-fi-v3'];
+function load() {
+  try {
+    const r = localStorage.getItem(SK);
+    if (r) return JSON.parse(r);
+    for (const k of OLD_KEYS) {
+      const old = localStorage.getItem(k);
+      if (old) { localStorage.setItem(SK, old); localStorage.removeItem(k); return JSON.parse(old); }
+    }
+  } catch(e) {}
+  return null;
+}
 function save(d) { try { localStorage.setItem(SK, JSON.stringify(d)); } catch(e) {} }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -278,6 +290,37 @@ function sparkline(valuations){
   const lc=vs[vs.length-1].value>=vs[0].value?'#16a34a':'#dc2626';
   const dots=vs.map((v,i)=>`<circle cx="${xf(i)}" cy="${yf(v.value)}" r="3" fill="${lc}"/><text x="${xf(i)}" y="${H-6}" text-anchor="middle" style="font-size:8px;fill:#9ca3af">${fmtShort(v.date)}</text>`).join('');
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lc}" stop-opacity="0.2"/><stop offset="100%" stop-color="${lc}" stop-opacity="0"/></linearGradient></defs><polygon points="${area}" fill="url(#sg)"/><polyline points="${pts}" fill="none" stroke="${lc}" stroke-width="2" stroke-linejoin="round"/>${dots}</svg>`;
+}
+
+
+// ── Portfolio total chart (Option 1: only shared dates) ───────────────────────
+function portfolioChart(accts, displayCurrency, fx) {
+  if (accts.length === 0) return '';
+  // Find dates that appear in ALL accounts
+  const dateSets = accts.map(a => new Set((a.valuations||[]).map(v=>v.date)));
+  const allDates = [...dateSets[0]].filter(d => dateSets.every(s => s.has(d))).sort();
+  if (allDates.length < 2) return '<div class="chart-hint">Portfolio chart appears once all accounts share 2+ valuation dates.</div>';
+  // Sum converted values on each shared date
+  const points = allDates.map(date => {
+    const total = accts.reduce((sum, a) => {
+      const v = (a.valuations||[]).find(v=>v.date===date);
+      return sum + conv(v.value, a.currency||'GBP', displayCurrency, fx);
+    }, 0);
+    return {date, total};
+  });
+  // Build SVG
+  const W=320, H=100, PL=8, PR=8, PT=8, PB=28;
+  const mn=Math.min(...points.map(p=>p.total));
+  const mx=Math.max(...points.map(p=>p.total));
+  const rng=mx-mn||1;
+  const xf=i=>PL+(i/Math.max(points.length-1,1))*(W-PL-PR);
+  const yf=v=>PT+(1-(v-mn)/rng)*(H-PT-PB);
+  const pts=points.map((p,i)=>xf(i)+','+yf(p.total)).join(' ');
+  const area=xf(0)+','+(H-PB)+' '+pts+' '+xf(points.length-1)+','+(H-PB);
+  const lc=points[points.length-1].total>=points[0].total?'#4ade80':'#f87171';
+  const dots=points.map((p,i)=>`<circle cx="${xf(i)}" cy="${yf(p.total)}" r="3" fill="${lc}"/><text x="${xf(i)}" y="${H-6}" text-anchor="middle" style="font-size:8px;fill:#9ca3af">${fmtShort(p.date)}</text>`).join('');
+  const svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${lc}" stop-opacity="0.2"/><stop offset="100%" stop-color="${lc}" stop-opacity="0"/></linearGradient></defs><polygon points="${area}" fill="url(#pg)"/><polyline points="${pts}" fill="none" stroke="${lc}" stroke-width="2" stroke-linejoin="round"/>${dots}</svg>`;
+  return `<div class="chart-wrap" style="margin-top:16px"><div class="chart-title">Total Portfolio Value (${displayCurrency})</div>${svg}</div>`;
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -519,6 +562,7 @@ function render(){
       <div class="section-label">Accounts</div>
       ${as.length===0?'<div class="empty-row">Tap + New Account to get started</div>':acctRows}
       <button class="new-acct-btn" data-action="goto-new-account">+ New Account</button>
+      ${portfolioChart(as,d,f)}
       <div style="height:40px"></div>
     </div>
     ${sheetHtml}
